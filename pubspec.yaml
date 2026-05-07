@@ -1,0 +1,40 @@
+name: odc_market_place
+description: "Sandhai Rate - Daily Market Prices for Oddanchatram & Dindigul"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.6.0
+  cloud_firestore: ^5.4.4
+
+  # State Management
+  get: ^4.6.6
+
+  # UI & Fonts
+  shimmer: ^3.0.0
+  cached_network_image: ^3.4.1
+
+  # Utils
+  intl: ^0.19.0
+  shared_preferences: ^2.3.2
+  cupertino_icons: ^1.0.8
+
+  # Ads
+  google_mobile_ads: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+

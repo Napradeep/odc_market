@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class AppTheme {
-  static ThemeData get darkTheme {
+  static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.accent,
         surface: AppColors.surface,
-        onPrimary: AppColors.textPrimary,
-        onSecondary: AppColors.textPrimary,
+        onPrimary: AppColors.white,
+        onSecondary: AppColors.white,
         onSurface: AppColors.textPrimary,
       ),
 
       // AppBar
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
@@ -43,8 +43,8 @@ class AppTheme {
 
       // BottomNavigationBar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.primaryDark,
-        selectedItemColor: AppColors.accent,
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textHint,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -55,39 +55,39 @@ class AppTheme {
         headlineLarge: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: Color(0xFFF1F8E9),
+          color: AppColors.textPrimary,
         ),
         headlineMedium: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: Color(0xFFF1F8E9),
+          color: AppColors.textPrimary,
         ),
         headlineSmall: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Color(0xFFF1F8E9),
+          color: AppColors.textPrimary,
         ),
         titleLarge: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: Color(0xFFF1F8E9),
+          color: AppColors.textPrimary,
         ),
         titleMedium: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: Color(0xFFA5D6A7),
+          color: AppColors.textSecondary,
         ),
         bodyLarge: TextStyle(
           fontSize: 16,
-          color: Color(0xFFF1F8E9),
+          color: AppColors.textPrimary,
         ),
         bodyMedium: TextStyle(
           fontSize: 14,
-          color: Color(0xFFA5D6A7),
+          color: AppColors.textSecondary,
         ),
         bodySmall: TextStyle(
           fontSize: 12,
-          color: Color(0xFF66BB6A),
+          color: AppColors.textMuted,
         ),
       ),
 

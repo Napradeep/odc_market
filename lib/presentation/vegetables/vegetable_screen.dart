@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../widgets/price_tile.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/bottom_ad_banner.dart';
-import 'vegetable_controller.dart';
+import '../blocs/market/market_bloc.dart';
+import '../blocs/market/market_event.dart';
+import '../blocs/market/market_state.dart';
 
-class VegetableScreen extends GetView<VegetableController> {
+class VegetableScreen extends StatefulWidget {
   const VegetableScreen({super.key});
+
+  @override
+  State<VegetableScreen> createState() => _VegetableScreenState();
+}
+
+class _VegetableScreenState extends State<VegetableScreen> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +40,14 @@ class VegetableScreen extends GetView<VegetableController> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: controller.onInit,
+            onPressed: () {
+              context.read<MarketBloc>().add(LoadMarketData());
+            },
           ),
         ],
       ),
@@ -52,7 +63,11 @@ class VegetableScreen extends GetView<VegetableController> {
               border: Border.all(color: AppColors.cardBorder),
             ),
             child: TextField(
-              onChanged: controller.search,
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.toLowerCase();
+                });
+              },
               style: const TextStyle(color: AppColors.textPrimary),
               decoration: const InputDecoration(
                 hintText: 'தேடு / Search...',
@@ -65,37 +80,47 @@ class VegetableScreen extends GetView<VegetableController> {
 
           // List
           Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const ShimmerLoader(itemCount: 8);
-              }
-              if (controller.error.isNotEmpty) {
-                return _buildError();
-              }
-              final list = controller.filtered;
-              if (list.isEmpty) {
-                return const Center(
-                  child: Text(AppStrings.noData,
-                      style: TextStyle(color: AppColors.textMuted)),
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) {
-                  final v = list[i];
-                  return PriceTile(
-                    tamilName: v.tamilName,
-                    englishName: v.englishName,
-                    todayPrice: v.todayPrice,
-                    yesterdayPrice: v.yesterdayPrice,
-                    unit: v.unit,
-                    accentColor: AppColors.vegetableLight,
+            child: BlocBuilder<MarketBloc, MarketState>(
+              builder: (context, state) {
+                if (state is MarketLoading || state is MarketInitial) {
+                  return const ShimmerLoader(itemCount: 8);
+                }
+                if (state is MarketError) {
+                  return _buildError();
+                }
+                if (state is MarketLoaded) {
+                  final allVegs = state.topVegetables; // Note: For production, load full list
+                  final list = allVegs.where((v) {
+                    return v.tamilName.toLowerCase().contains(_searchQuery) ||
+                        v.englishName.toLowerCase().contains(_searchQuery);
+                  }).toList();
+
+                  if (list.isEmpty) {
+                    return const Center(
+                      child: Text(AppStrings.noData,
+                          style: TextStyle(color: AppColors.textMuted)),
+                    );
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final v = list[i];
+                      return PriceTile(
+                        tamilName: v.tamilName,
+                        englishName: v.englishName,
+                        todayPrice: v.todayPrice,
+                        yesterdayPrice: v.yesterdayPrice,
+                        unit: v.unit,
+                        accentColor: AppColors.vegetableLight,
+                      );
+                    },
                   );
-                },
-              );
-            }),
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ],
       ),
@@ -115,7 +140,9 @@ class VegetableScreen extends GetView<VegetableController> {
               style: TextStyle(color: AppColors.textMuted)),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: controller.onInit,
+            onPressed: () {
+              context.read<MarketBloc>().add(LoadMarketData());
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.vegetable,
               foregroundColor: Colors.white,

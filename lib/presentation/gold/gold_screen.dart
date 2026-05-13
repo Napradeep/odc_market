@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
+import '../../widgets/bottom_ad_banner.dart';
 import '../../widgets/price_tile.dart';
 import '../../widgets/shimmer_loader.dart';
-import '../../widgets/bottom_ad_banner.dart';
-import 'gold_binding.dart';
+import '../blocs/market/market_bloc.dart';
+import '../blocs/market/market_event.dart';
+import '../blocs/market/market_state.dart';
 
-class GoldScreen extends GetView<GoldController> {
+class GoldScreen extends StatelessWidget {
   const GoldScreen({super.key});
 
   @override
@@ -25,119 +27,75 @@ class GoldScreen extends GetView<GoldController> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white)),
             Text(AppStrings.goldEn,
-                style: TextStyle(fontSize: 11, color: Colors.white70)),
+                style: TextStyle(
+                    fontSize: 11, color: Colors.white70)),
           ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: List.generate(
-                  3,
-                  (_) => const Padding(
-                        padding: EdgeInsets.only(bottom: 14),
-                        child: ShimmerCard(height: 120),
-                      )),
-            ),
-          );
-        }
-
-        final gold = controller.gold.value;
-        if (gold == null) {
-          return const Center(
-            child: Text(AppStrings.noData,
-                style: TextStyle(color: AppColors.textMuted)),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildGoldHeader(),
-              const SizedBox(height: 20),
-              GoldPriceTile(
-                tamilName: AppStrings.gold22k,
-                englishName: AppStrings.gold22kEn,
-                price: gold.gold22k,
-                yesterdayPrice: gold.yesterdayGold22k,
-                unit: 'gram',
-              ),
-              const SizedBox(height: 14),
-              GoldPriceTile(
-                tamilName: AppStrings.gold24k,
-                englishName: AppStrings.gold24kEn,
-                price: gold.gold24k,
-                yesterdayPrice: gold.yesterdayGold24k,
-                unit: 'gram',
-              ),
-              const SizedBox(height: 14),
-              GoldPriceTile(
-                tamilName: AppStrings.silver,
-                englishName: AppStrings.silverEn,
-                price: gold.silver,
-                yesterdayPrice: gold.yesterdaySilver,
-                unit: 'gram',
-              ),
-              const SizedBox(height: 20),
-              if (gold.updatedAt != null)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.update_rounded,
-                        size: 14, color: AppColors.textMuted),
-                    const SizedBox(width: 6),
-                    Text(
-                      'புதுப்பிக்கப்பட்டது: ${gold.updatedAt!.day}/${gold.updatedAt!.month}/${gold.updatedAt!.year}',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }),
-      bottomNavigationBar: const BottomAdBanner(),
-    );
-  }
-
-  Widget _buildGoldHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accentLight.withValues(alpha: 0.15),
-            AppColors.surfaceLight,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: AppColors.accentLight.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          const Text('🪙', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'ஒட்டன்சத்திரம் — தினசரி தங்க விலை\nOddanchatram Daily Gold Rates',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: () => context.read<MarketBloc>().add(LoadMarketData()),
           ),
         ],
       ),
+      body: BlocBuilder<MarketBloc, MarketState>(
+        builder: (context, state) {
+          if (state is MarketLoading || state is MarketInitial) {
+            return const ShimmerLoader(itemCount: 3);
+          }
+          if (state is MarketError) {
+            return Center(
+              child: Text(state.message, style: const TextStyle(color: Colors.red)),
+            );
+          }
+          if (state is MarketLoaded) {
+            final gold = state.goldModel;
+            if (gold == null) {
+              return const Center(
+                child: Text(AppStrings.noData,
+                    style: TextStyle(color: AppColors.textMuted)),
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                PriceTile(
+                  tamilName: 'தங்கம் (22K)',
+                  englishName: 'Gold 22 Carat',
+                  todayPrice: gold.gold22k,
+                  yesterdayPrice: gold.yesterdayGold22k,
+                  unit: 'g',
+                  accentColor: AppColors.goldLight,
+                ),
+                const SizedBox(height: 12),
+                PriceTile(
+                  tamilName: 'தங்கம் (24K)',
+                  englishName: 'Gold 24 Carat',
+                  todayPrice: gold.gold24k,
+                  yesterdayPrice: gold.yesterdayGold24k,
+                  unit: 'g',
+                  accentColor: AppColors.goldLight,
+                ),
+                const SizedBox(height: 12),
+                PriceTile(
+                  tamilName: 'வெள்ளி',
+                  englishName: 'Silver',
+                  todayPrice: gold.silver,
+                  yesterdayPrice: gold.yesterdaySilver,
+                  unit: 'g',
+                  accentColor: AppColors.goldLight,
+                ),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      bottomNavigationBar: const BottomAdBanner(),
     );
   }
 }

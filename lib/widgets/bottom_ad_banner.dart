@@ -33,7 +33,7 @@ class _BottomAdBannerState extends State<BottomAdBanner> {
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
-          print('Ad failed to load: $error');
+          debugPrint('Ad failed to load: $error');
         },
       ),
     )..load();

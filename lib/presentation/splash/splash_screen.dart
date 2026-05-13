@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import '../../app/routes/app_routes.dart';
+import '../home/home_screen.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 
@@ -57,7 +56,11 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     Future.delayed(const Duration(milliseconds: 2800), () {
-      if (mounted) Get.offNamed(AppRoutes.home);
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     });
   }
 
@@ -71,16 +74,16 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: AppColors.primary,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.2,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1B5E20),
-              Color(0xFF0A3D0A),
-              Color(0xFF071A07),
+              AppColors.primaryLight,
+              AppColors.primary,
+              AppColors.primaryDark,
             ],
           ),
         ),
@@ -103,23 +106,20 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primaryLight, AppColors.accent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryLight.withValues(alpha: 0.4),
-                        blurRadius: 40,
-                        spreadRadius: 10,
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
                   child: const Icon(
                     Icons.storefront_rounded,
                     size: 60,
-                    color: Colors.white,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -133,9 +133,9 @@ class _SplashScreenState extends State<SplashScreen>
                   position: _textSlide,
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         AppStrings.appName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -143,12 +143,12 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      const Text(
                         AppStrings.appNameEn,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w300,
-                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white70,
                           letterSpacing: 3.0,
                         ),
                       ),
@@ -157,16 +157,15 @@ class _SplashScreenState extends State<SplashScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.black.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15)),
                         ),
                         child: const Text(
                           AppStrings.splashSubtitle,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -180,12 +179,12 @@ class _SplashScreenState extends State<SplashScreen>
               // Loader
               FadeTransition(
                 opacity: _textOpacity,
-                child: SizedBox(
+                child: const SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.accent.withValues(alpha: 0.7),
+                    strokeWidth: 3,
+                    color: Colors.white,
                   ),
                 ),
               ),

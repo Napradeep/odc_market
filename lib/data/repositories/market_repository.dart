@@ -1,136 +1,106 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/vegetable_model.dart';
 import '../models/market_models.dart';
+import '../../core/constants/app_constants.dart';
 
 class MarketRepository {
-  // Use mock data for now since Firebase is not yet configured
-  final bool _useMock = true;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _defaultCity = 'oddanchatram';
 
-  // ─── Vegetables ───────────────────────────────────────────────
-  Stream<List<VegetableModel>> getVegetablesStream() {
-    if (_useMock) {
-      return Stream.value([
-        VegetableModel(
-            id: '1',
-            tamilName: 'தக்காளி',
-            englishName: 'Tomato',
-            todayPrice: 14,
-            yesterdayPrice: 12),
-        VegetableModel(
-            id: '2',
-            tamilName: 'வெங்காயம்',
-            englishName: 'Onion',
-            todayPrice: 22,
-            yesterdayPrice: 25),
-        VegetableModel(
-            id: '3',
-            tamilName: 'உருளைக்கிழங்கு',
-            englishName: 'Potato',
-            todayPrice: 30,
-            yesterdayPrice: 30),
-        VegetableModel(
-            id: '4',
-            tamilName: 'கேரட்',
-            englishName: 'Carrot',
-            todayPrice: 45,
-            yesterdayPrice: 40),
-        VegetableModel(
-            id: '5',
-            tamilName: 'பீன்ஸ்',
-            englishName: 'Beans',
-            todayPrice: 60,
-            yesterdayPrice: 70),
-      ]);
+  // Supported Categories
+  static const List<String> categories = [
+    'vegetable', 'fruit', 'flower', 'egg', 'fish', 'chicken', 
+    'mutton', 'pork', 'beef', 'petrol', 'diesel', 'lpg', 
+    'autogas', 'gold', 'silver', 'platinum'
+  ];
+
+  Future<Map<String, List<VegetableModel>>> getAllData({String? city}) async {
+    final Map<String, List<VegetableModel>> results = {};
+    
+    // Fetch all in parallel
+    final futures = categories.map((cat) => getCategoryData(cat, city: city));
+    final lists = await Future.wait(futures);
+    
+    for (var i = 0; i < categories.length; i++) {
+      results[categories[i]] = lists[i];
     }
-    // Real Firestore code (commented out until Firebase is configured)
-    /*
-    return FirebaseFirestore.instance
-        .collection('${AppConstants.marketBase()}/${AppConstants.vegetablesPath}')
-        .orderBy('english_name')
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => VegetableModel.fromFirestore(d)).toList());
-    */
-    return Stream.value([]);
+    
+    return results;
   }
 
-  Future<List<VegetableModel>> getVegetables() async {
-    if (_useMock) {
-      return [
-        VegetableModel(
-            id: '1',
-            tamilName: 'தக்காளி',
-            englishName: 'Tomato',
-            todayPrice: 14,
-            yesterdayPrice: 12),
-        VegetableModel(
-            id: '2',
-            tamilName: 'வெங்காயம்',
-            englishName: 'Onion',
-            todayPrice: 22,
-            yesterdayPrice: 25),
-        VegetableModel(
-            id: '3',
-            tamilName: 'உருளைக்கிழங்கு',
-            englishName: 'Potato',
-            todayPrice: 30,
-            yesterdayPrice: 30),
-      ];
+  Future<List<VegetableModel>> getCategoryData(String category, {String? city}) async {
+    try {
+      final doc = await _firestore
+          .doc(AppConstants.latestPath(city ?? _defaultCity, category))
+          .get();
+      return VegetableModel.fromScraperDoc(doc);
+    } catch (e) {
+      return [];
     }
-    return [];
   }
 
-  // ─── Egg ──────────────────────────────────────────────────────
-  Stream<EggModel?> getEggStream() {
-    if (_useMock) {
-      return Stream.value(EggModel(
-        pricePerEgg: 5.80,
-        pricePerTray: 174,
-        pricePer100: 580,
-        yesterdayPerEgg: 5.60,
-        updatedAt: DateTime.now(),
-      ));
+  // Legacy support for specific methods if needed elsewhere
+  Future<List<VegetableModel>> getVegetables({String? city}) => getCategoryData('vegetable', city: city);
+  Future<List<VegetableModel>> getFruits({String? city}) => getCategoryData('fruit', city: city);
+  Future<List<VegetableModel>> getFlowers({String? city}) => getCategoryData('flower', city: city);
+  
+  Future<EggModel?> getEgg({String? city}) async {
+    final data = await getCategoryData('egg', city: city);
+    if (data.isEmpty) return null;
+    final item = data.first;
+    return EggModel(
+      pricePerEgg: item.todayPrice,
+      pricePerTray: item.todayPrice * 30,
+      pricePer100: item.todayPrice * 100,
+      yesterdayPerEgg: item.yesterdayPrice,
+      updatedAt: item.updatedAt,
+    );
+  }
+
+  Future<FuelModel?> getFuel({String? city}) async {
+    final petrol = await getCategoryData('petrol', city: city);
+    final diesel = await getCategoryData('diesel', city: city);
+    
+    return FuelModel(
+      petrolPrice: petrol.isNotEmpty ? petrol.first.todayPrice : 0,
+      dieselPrice: diesel.isNotEmpty ? diesel.first.todayPrice : 0,
+      yesterdayPetrol: petrol.isNotEmpty ? petrol.first.yesterdayPrice : 0,
+      yesterdayDiesel: diesel.isNotEmpty ? diesel.first.yesterdayPrice : 0,
+      updatedAt: petrol.isNotEmpty ? petrol.first.updatedAt : null,
+    );
+  }
+
+  Future<GoldModel?> getGold({String? city}) async {
+    final gold = await getCategoryData('gold', city: city);
+    final silver = await getCategoryData('silver', city: city);
+    
+    double g22 = 0, g24 = 0;
+    for (var g in gold) {
+      if (g.englishName.contains('22')) g22 = g.todayPrice;
+      if (g.englishName.contains('24')) g24 = g.todayPrice;
     }
-    return Stream.value(null);
-  }
 
-  Future<EggModel?> getEgg() async {
-    return null;
+    return GoldModel(
+      gold22k: g22,
+      gold24k: g24,
+      silver: silver.isNotEmpty ? silver.first.todayPrice : 0,
+      yesterdayGold22k: g22,
+      yesterdayGold24k: g24,
+      yesterdaySilver: silver.isNotEmpty ? silver.first.yesterdayPrice : 0,
+      updatedAt: gold.isNotEmpty ? gold.first.updatedAt : null,
+    );
   }
-
-  // ─── Fuel ─────────────────────────────────────────────────────
-  Stream<FuelModel?> getFuelStream() {
-    if (_useMock) {
-      return Stream.value(FuelModel(
-        petrolPrice: 102.45,
-        dieselPrice: 94.10,
-        yesterdayPetrol: 102.45,
-        yesterdayDiesel: 93.80,
-        updatedAt: DateTime.now(),
-      ));
+  Future<List<VegetableModel>> getMeat({String? city}) async {
+    final meatList = <VegetableModel>[];
+    try {
+      final categories = ['chicken', 'mutton', 'fish'];
+      for (var cat in categories) {
+        final data = await getCategoryData(cat, city: city);
+        meatList.addAll(data);
+      }
+      return meatList;
+    } catch (e) {
+      return meatList;
     }
-    return Stream.value(null);
-  }
-
-  Future<FuelModel?> getFuel() async {
-    return null;
-  }
-
-  // ─── Gold ─────────────────────────────────────────────────────
-  Stream<GoldModel?> getGoldStream() {
-    if (_useMock) {
-      return Stream.value(GoldModel(
-        gold22k: 7250,
-        gold24k: 7900,
-        silver: 92,
-        yesterdayGold22k: 7200,
-        yesterdayGold24k: 7850,
-        yesterdaySilver: 90,
-        updatedAt: DateTime.now(),
-      ));
-    }
-    return Stream.value(null);
-  }
-
-  Future<GoldModel?> getGold() async {
-    return null;
   }
 }

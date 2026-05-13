@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,9 +13,21 @@ import 'presentation/blocs/language/language_bloc.dart';
 import 'presentation/blocs/language/language_event.dart';
 import 'presentation/blocs/language/language_state.dart';
 import 'presentation/splash/splash_screen.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  // Note: You may need to run 'flutterfire configure' to generate firebase_options.dart
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+
   await MobileAds.instance.initialize();
 
   await di.init();

@@ -39,6 +39,28 @@ class VegetableModel {
     );
   }
 
+  static List<VegetableModel> fromScraperDoc(DocumentSnapshot doc) {
+    if (!doc.exists) return [];
+    final data = doc.data() as Map<String, dynamic>;
+    final rates = data['rates'] as List? ?? [];
+    final updatedAtStr = data['scraped_at'] as String?;
+    final updatedAt = updatedAtStr != null ? DateTime.tryParse(updatedAtStr) : null;
+
+    return rates.map((r) {
+      final item = r as Map<String, dynamic>;
+      final name = item['item'] ?? '';
+      return VegetableModel(
+        id: name,
+        tamilName: name, // Scraper currently only provides English names, we'll need a mapper later
+        englishName: name,
+        todayPrice: (item['price'] ?? 0).toDouble(),
+        yesterdayPrice: (item['price'] ?? 0).toDouble(), // Scraper doesn't provide history yet
+        unit: item['unit'] ?? 'kg',
+        updatedAt: updatedAt,
+      );
+    }).toList();
+  }
+
   Map<String, dynamic> toFirestore() => {
         'tamil_name': tamilName,
         'english_name': englishName,

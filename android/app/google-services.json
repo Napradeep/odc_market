@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "950984900929",
+    "project_id": "veg-server",
+    "storage_bucket": "veg-server.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950984900929:android:70180b203f4fb1f2fae1c0",
+        "android_client_info": {
+          "package_name": "com.example.odc_market_place"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpGais7vky2Ga-lSCGxiv62f04tQf02qg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

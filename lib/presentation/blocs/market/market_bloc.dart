@@ -18,13 +18,16 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
   ) async {
     emit(MarketLoading());
     try {
-      final vegs = await _repository.getVegetables();
-      final egg = await _repository.getEgg();
-      final fuel = await _repository.getFuel();
-      final gold = await _repository.getGold();
-
+      final city = event.city;
+      final allData = await _repository.getAllData(city: city);
+      final vegs = allData['vegetable'] ?? [];
+      final egg = await _repository.getEgg(city: city);
+      final fuel = await _repository.getFuel(city: city);
+      final gold = await _repository.getGold(city: city);
+ 
       emit(MarketLoaded(
         topVegetables: vegs.take(5).toList(),
+        allData: allData,
         eggModel: egg,
         fuelModel: fuel,
         goldModel: gold,

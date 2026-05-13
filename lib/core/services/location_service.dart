@@ -78,7 +78,7 @@ class LocationService {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        
+
         final userLoc = UserLocation(
           lat: position.latitude,
           lng: position.longitude,
@@ -89,18 +89,18 @@ class LocationService {
 
         // Cache the location
         await _prefs.setString(_locationCacheKey, jsonEncode(userLoc.toJson()));
-        
+
         return userLoc;
       } else {
-         throw Exception('Could not determine area details from coordinates.');
+        throw Exception('Could not determine area details from coordinates.');
       }
     } catch (e) {
-       // Fallback to cache if available and offline/failed
-       final cachedLoc = getCachedLocation();
-       if (cachedLoc != null) {
-         return cachedLoc;
-       }
-       throw Exception('Failed to get location: $e');
+      // Fallback to cache if available and offline/failed
+      final cachedLoc = getCachedLocation();
+      if (cachedLoc != null) {
+        return cachedLoc;
+      }
+      throw Exception('Failed to get location: $e');
     }
   }
 

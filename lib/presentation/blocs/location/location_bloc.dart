@@ -10,6 +10,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       : _locationService = locationService,
         super(LocationInitial()) {
     on<LoadLocation>(_onLoadLocation);
+    on<UpdateMarketCity>(_onUpdateMarketCity);
   }
 
   Future<void> _onLoadLocation(
@@ -19,15 +20,47 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     emit(LocationLoading());
     try {
       final location = await _locationService.getCurrentLocation();
-      emit(LocationLoaded(location));
+      
+      String marketCity = 'oddanchatram';
+      String marketCityName = 'Oddanchatram';
+      
+      // If district is Dindigul, explicitly set market to Oddanchatram
+      if (location.district.toLowerCase().contains('dindigul')) {
+        marketCity = 'oddanchatram';
+        marketCityName = 'Oddanchatram';
+      }
+
+      emit(LocationLoaded(
+        location: location,
+        marketCity: marketCity,
+        marketCityName: marketCityName,
+      ));
     } catch (e) {
-      // Try to fallback to cached location
       final cached = _locationService.getCachedLocation();
       if (cached != null) {
-        emit(LocationLoaded(cached));
+        emit(LocationLoaded(location: cached));
       } else {
-        emit(LocationError(e.toString()));
+        // Emit Loaded with null location to allow manual city selection even if GPS fails
+        emit(const LocationLoaded(location: null));
       }
+    }
+  }
+
+  void _onUpdateMarketCity(
+    UpdateMarketCity event,
+    Emitter<LocationState> emit,
+  ) {
+    if (state is LocationLoaded) {
+      emit((state as LocationLoaded).copyWith(
+        marketCity: event.citySlug,
+        marketCityName: event.cityName,
+      ));
+    } else {
+      emit(LocationLoaded(
+        location: null,
+        marketCity: event.citySlug,
+        marketCityName: event.cityName,
+      ));
     }
   }
 }

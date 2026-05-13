@@ -10,7 +10,18 @@ import '../blocs/market/market_event.dart';
 import '../blocs/market/market_state.dart';
 
 class VegetableScreen extends StatefulWidget {
-  const VegetableScreen({super.key});
+  final String category;
+  final String title;
+  final String titleEn;
+  final Color color;
+
+  const VegetableScreen({
+    super.key,
+    required this.category,
+    required this.title,
+    required this.titleEn,
+    required this.color,
+  });
 
   @override
   State<VegetableScreen> createState() => _VegetableScreenState();
@@ -21,60 +32,110 @@ class _VegetableScreenState extends State<VegetableScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.vegetable,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(AppStrings.vegetables,
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            Text(AppStrings.vegetablesEn,
-                style: TextStyle(
-                    fontSize: 11, color: Colors.white70)),
-          ],
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: () {
-              context.read<MarketBloc>().add(LoadMarketData());
-            },
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          // Search bar
+          // Premium Custom AppBar
           Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.cardBorder),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 10,
+              bottom: 20,
+              left: 8,
+              right: 8,
             ),
-            child: TextField(
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.toLowerCase();
-                });
-              },
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
-                hintText: 'தேடு / Search...',
-                hintStyle: TextStyle(color: AppColors.textMuted),
-                border: InputBorder.none,
-                icon: Icon(Icons.search_rounded, color: AppColors.textMuted),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  widget.color,
+                  widget.color.withValues(alpha: 0.8),
+                ],
               ),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: TextStyle(
+                              fontSize: isTablet ? 24 : 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            widget.titleEn,
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      onPressed: () {
+                        context.read<MarketBloc>().add(LoadMarketData());
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Search bar inside AppBar area for better "vibe"
+                Center(
+                  child: Container(
+                    width: isTablet ? 500 : double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: TextField(
+                      onChanged: (val) {
+                        setState(() {
+                          _searchQuery = val.toLowerCase();
+                        });
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'தேடு / Search...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                        border: InputBorder.none,
+                        icon: const Icon(Icons.search_rounded, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -89,31 +150,56 @@ class _VegetableScreenState extends State<VegetableScreen> {
                   return _buildError();
                 }
                 if (state is MarketLoaded) {
-                  final allVegs = state.topVegetables; // Note: For production, load full list
-                  final list = allVegs.where((v) {
+                  final allItems = state.allData[widget.category] ?? [];
+                  final list = allItems.where((v) {
                     return v.tamilName.toLowerCase().contains(_searchQuery) ||
                         v.englishName.toLowerCase().contains(_searchQuery);
                   }).toList();
 
                   if (list.isEmpty) {
-                    return const Center(
-                      child: Text(AppStrings.noData,
-                          style: TextStyle(color: AppColors.textMuted)),
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 64, color: AppColors.textMuted.withValues(alpha: 0.3)),
+                          const SizedBox(height: 16),
+                          const Text(AppStrings.noData,
+                              style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     );
                   }
+                  
                   return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    padding: EdgeInsets.fromLTRB(
+                      isTablet ? 32 : 16, 
+                      20, 
+                      isTablet ? 32 : 16, 
+                      24
+                    ),
                     itemCount: list.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (_, i) {
                       final v = list[i];
+                      
+                      // Bullion specific layout
+                      if (['gold', 'silver', 'platinum'].contains(widget.category)) {
+                        return GoldPriceTile(
+                          tamilName: v.tamilName,
+                          englishName: v.englishName,
+                          price: v.todayPrice,
+                          yesterdayPrice: v.yesterdayPrice,
+                          unit: v.unit,
+                        );
+                      }
+
                       return PriceTile(
                         tamilName: v.tamilName,
                         englishName: v.englishName,
                         todayPrice: v.todayPrice,
                         yesterdayPrice: v.yesterdayPrice,
                         unit: v.unit,
-                        accentColor: AppColors.vegetableLight,
+                        accentColor: widget.color,
                       );
                     },
                   );
@@ -144,7 +230,7 @@ class _VegetableScreenState extends State<VegetableScreen> {
               context.read<MarketBloc>().add(LoadMarketData());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.vegetable,
+              backgroundColor: widget.color,
               foregroundColor: Colors.white,
             ),
             child: const Text(AppStrings.retry),

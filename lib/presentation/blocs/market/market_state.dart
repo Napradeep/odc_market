@@ -15,19 +15,22 @@ class MarketLoading extends MarketState {}
 
 class MarketLoaded extends MarketState {
   final List<VegetableModel> topVegetables;
+  final Map<String, List<VegetableModel>> allData;
   final EggModel? eggModel;
   final FuelModel? fuelModel;
   final GoldModel? goldModel;
 
   const MarketLoaded({
     required this.topVegetables,
+    required this.allData,
     this.eggModel,
     this.fuelModel,
     this.goldModel,
   });
 
   @override
-  List<Object?> get props => [topVegetables, eggModel, fuelModel, goldModel];
+  List<Object?> get props =>
+      [topVegetables, allData, eggModel, fuelModel, goldModel];
 }
 
 class MarketError extends MarketState {

@@ -8,23 +8,45 @@ import '../../blocs/location/location_state.dart';
 import '../../blocs/language/language_bloc.dart';
 import '../../blocs/language/language_event.dart';
 import '../../blocs/language/language_state.dart';
+import '../../../core/constants/app_constants.dart';
 
 class HomeSliverAppBar extends StatelessWidget {
   const HomeSliverAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
     return SliverAppBar(
-      expandedHeight: 110,
+      expandedHeight: isTablet ? 150 : 130,
+      toolbarHeight: isTablet ? 85 : 75, // Increased to prevent clipping
       floating: true,
       pinned: true,
       elevation: 0,
-      backgroundColor: AppColors.background.withValues(alpha: 0.95),
+      stretch: true,
+      centerTitle: false,
+      backgroundColor: AppColors.background.withValues(alpha: 0.9),
       flexibleSpace: FlexibleSpaceBar(
-        background: ClipRect(
+        stretchModes: const [
+          StretchMode.blurBackground,
+          StretchMode.zoomBackground,
+        ],
+        background: ClipRRect(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: Colors.transparent),
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.08),
+                    AppColors.background.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -32,54 +54,70 @@ class HomeSliverAppBar extends StatelessWidget {
         builder: (context, state) {
           return BlocBuilder<LanguageBloc, LanguageState>(
             builder: (context, langState) {
-              String areaName = langState.isEnglish ? 'Searching...' : 'தேடுகிறது...';
-              String district = '';
-
-              if (state is LocationLoaded) {
-                areaName = state.location.area;
-                district = state.location.district;
-              } else if (state is LocationError) {
-                areaName = langState.isEnglish ? 'Location Denied' : 'அனுமதி மறுக்கப்பட்டது';
-                district = '';
+              String locationText =
+                  langState.isEnglish ? 'Your Location' : 'உங்கள் இருப்பிடம்';
+              if (state is LocationLoaded && state.location != null) {
+                final area = state.location!.area;
+                final district = state.location!.district;
+                locationText = area.isEmpty ? district : '$area, $district';
               } else if (state is LocationLoading) {
-                areaName = langState.isEnglish ? 'Locating...' : 'கண்டறியப்படுகிறது...';
-                district = '';
-              } else if (state is LocationInitial) {
-                areaName = langState.isEnglish ? 'Searching...' : 'தேடுகிறது...';
-                district = '';
+                locationText = langState.isEnglish
+                    ? 'Locating...'
+                    : 'கண்டறியப்படுகிறது...';
               }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.near_me_rounded,
-                          color: AppColors.accent, size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        langState.isEnglish ? 'Your Location' : 'உங்கள் இருப்பிடம்',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
                   GestureDetector(
-                    onTap: () => context.read<LocationBloc>().add(LoadLocation()),
-                    child: Text(
-                      district.isEmpty ? areaName : '$areaName, $district',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    onTap: () => _showCitySelector(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.location_on_rounded,
+                                color: AppColors.primary, size: 12),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            state is LocationLoaded
+                                ? state.marketCityName
+                                : 'Select City',
+                            style: TextStyle(
+                              fontSize: isTablet ? 15 : 13,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.primary, size: 18),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -89,49 +127,160 @@ class HomeSliverAppBar extends StatelessWidget {
         },
       ),
       actions: [
-        BlocBuilder<LanguageBloc, LanguageState>(
-          builder: (context, state) {
-            return TextButton(
-              onPressed: () => context.read<LanguageBloc>().add(ToggleLanguage()),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  state.isEnglish ? 'தமிழ்' : 'English',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15.0),
+          child: BlocBuilder<LanguageBloc, LanguageState>(
+            builder: (context, state) {
+              return InkWell(
+                onTap: () => context.read<LanguageBloc>().add(ToggleLanguage()),
+                borderRadius: BorderRadius.circular(0),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.15)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    state.isEnglish ? 'தமிழ்' : 'English',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: CircleAvatar(
-            backgroundColor: AppColors.surfaceLight,
-            radius: 20,
-            child: IconButton(
-              icon: const Icon(Icons.person_rounded,
-                  color: AppColors.textPrimary, size: 20),
-              onPressed: () {},
-            ),
+              );
+            },
           ),
         ),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1.0),
-        child: Container(
-          color: AppColors.cardBorder.withValues(alpha: 0.5),
-          height: 1.0,
-        ),
-      ),
+    );
+  }
+
+  void _showCitySelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Select Market City',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Choose your nearest market for accurate rates',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                  itemCount: AppConstants.marketCities.length,
+                  itemBuilder: (context, index) {
+                    final city = AppConstants.marketCities[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: InkWell(
+                        onTap: () {
+                          context.read<LocationBloc>().add(
+                              UpdateMarketCity(city['slug']!, city['name']!));
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.background.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.storefront_rounded,
+                                    color: AppColors.primary, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      city['name']!,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      city['tamil']!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textMuted
+                                            .withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded,
+                                  color: AppColors.divider, size: 14),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

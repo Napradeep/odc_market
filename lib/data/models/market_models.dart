@@ -31,6 +31,32 @@ class EggModel {
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate(),
     );
   }
+
+  static EggModel? fromScraperDoc(DocumentSnapshot doc) {
+    if (!doc.exists) return null;
+    final data = doc.data() as Map<String, dynamic>;
+    final rates = data['rates'] as List? ?? [];
+    if (rates.isEmpty) return null;
+
+    final updatedAtStr = data['scraped_at'] as String?;
+    final updatedAt = updatedAtStr != null ? DateTime.tryParse(updatedAtStr) : null;
+
+    // Find the egg item
+    final eggData = rates.firstWhere(
+      (r) => (r['item'] as String).toLowerCase().contains('egg'),
+      orElse: () => rates.first,
+    );
+
+    final price = (eggData['price'] ?? 0).toDouble();
+
+    return EggModel(
+      pricePerEgg: price,
+      pricePerTray: price * 30,
+      pricePer100: price * 100,
+      yesterdayPerEgg: price, // No history in latest doc
+      updatedAt: updatedAt,
+    );
+  }
 }
 
 class FuelModel {
@@ -61,6 +87,40 @@ class FuelModel {
       yesterdayPetrol: (data['yesterday_petrol'] ?? 0).toDouble(),
       yesterdayDiesel: (data['yesterday_diesel'] ?? 0).toDouble(),
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  static FuelModel? fromScraperDoc(DocumentSnapshot petrolDoc, DocumentSnapshot dieselDoc) {
+    if (!petrolDoc.exists && !dieselDoc.exists) return null;
+    
+    double petrol = 0;
+    double diesel = 0;
+    DateTime? updatedAt;
+
+    if (petrolDoc.exists) {
+      final data = petrolDoc.data() as Map<String, dynamic>;
+      final rates = data['rates'] as List? ?? [];
+      if (rates.isNotEmpty) {
+        petrol = (rates[0]['price'] ?? 0).toDouble();
+      }
+      final upStr = data['scraped_at'] as String?;
+      if (upStr != null) updatedAt = DateTime.tryParse(upStr);
+    }
+
+    if (dieselDoc.exists) {
+      final data = dieselDoc.data() as Map<String, dynamic>;
+      final rates = data['rates'] as List? ?? [];
+      if (rates.isNotEmpty) {
+        diesel = (rates[0]['price'] ?? 0).toDouble();
+      }
+    }
+
+    return FuelModel(
+      petrolPrice: petrol,
+      dieselPrice: diesel,
+      yesterdayPetrol: petrol,
+      yesterdayDiesel: diesel,
+      updatedAt: updatedAt,
     );
   }
 }
@@ -98,6 +158,46 @@ class GoldModel {
       yesterdayGold24k: (data['yesterday_gold_24k'] ?? 0).toDouble(),
       yesterdaySilver: (data['yesterday_silver'] ?? 0).toDouble(),
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  static GoldModel? fromScraperDoc(DocumentSnapshot goldDoc, DocumentSnapshot silverDoc) {
+    if (!goldDoc.exists && !silverDoc.exists) return null;
+
+    double g22 = 0;
+    double g24 = 0;
+    double sil = 0;
+    DateTime? updatedAt;
+
+    if (goldDoc.exists) {
+      final data = goldDoc.data() as Map<String, dynamic>;
+      final rates = data['rates'] as List? ?? [];
+      for (var r in rates) {
+        final name = (r['item'] as String).toLowerCase();
+        final price = (r['price'] ?? 0).toDouble();
+        if (name.contains('22')) g22 = price;
+        if (name.contains('24')) g24 = price;
+      }
+      final upStr = data['scraped_at'] as String?;
+      if (upStr != null) updatedAt = DateTime.tryParse(upStr);
+    }
+
+    if (silverDoc.exists) {
+      final data = silverDoc.data() as Map<String, dynamic>;
+      final rates = data['rates'] as List? ?? [];
+      if (rates.isNotEmpty) {
+        sil = (rates[0]['price'] ?? 0).toDouble();
+      }
+    }
+
+    return GoldModel(
+      gold22k: g22,
+      gold24k: g24,
+      silver: sil,
+      yesterdayGold22k: g22,
+      yesterdayGold24k: g24,
+      yesterdaySilver: sil,
+      updatedAt: updatedAt,
     );
   }
 }

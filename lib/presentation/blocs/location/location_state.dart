@@ -13,12 +13,30 @@ class LocationInitial extends LocationState {}
 class LocationLoading extends LocationState {}
 
 class LocationLoaded extends LocationState {
-  final UserLocation location;
+  final UserLocation? location;
+  final String marketCity;
+  final String marketCityName;
 
-  const LocationLoaded(this.location);
+  const LocationLoaded({
+    this.location,
+    this.marketCity = 'oddanchatram',
+    this.marketCityName = 'Oddanchatram',
+  });
 
   @override
-  List<Object> get props => [location];
+  List<Object?> get props => [location, marketCity, marketCityName];
+
+  LocationLoaded copyWith({
+    UserLocation? location,
+    String? marketCity,
+    String? marketCityName,
+  }) {
+    return LocationLoaded(
+      location: location ?? this.location,
+      marketCity: marketCity ?? this.marketCity,
+      marketCityName: marketCityName ?? this.marketCityName,
+    );
+  }
 }
 
 class LocationError extends LocationState {
@@ -27,5 +45,5 @@ class LocationError extends LocationState {
   const LocationError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }
